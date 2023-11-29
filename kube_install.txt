@@ -56,8 +56,12 @@ $ sudo apt-mark hold kubeadm kubelet kubectl
 sudo systemctl restart containerd
 
 #Installation init sur Master
-sudo kubeadm init --apiserver-advertise-address=192.168.153.11 --pod-network-cidr=10.244.0.0/16
+sudo kubeadm init
 
+//ou/!!
+//sudo kubeadm init --apiserver-advertise-address=192.168.153.11 --pod-network-cidr=10.244.0.0/16
+//pour dans ce cas, l'API server sera accessible à partir de l'adresse IP 192.168.153.11.
+//--pod-network-cidr=10.244.0.0/16 : Cela spécifie la plage d'adresses IP pour les pods du cluster. // 
 
 #Ajout .kube
 mkdir -p $HOME/.kube
