@@ -1,0 +1,78 @@
+******************************************
+		Kubernetes-ContainerD
+******************************************
+
+#Désactivation SWAP
+swapoff -a
+sudo mount -a
+
+#Install Docker
+
+sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+
+1.MAJ l' aptindex des packages + dépôt HTTPS :
+$ sudo apt-get update
+$ sudo apt-get install ca-certificates curl gnupg
+
+2.Ajout de la clé GPG officielle de Docker :
+$ sudo install -m 0755 -d /etc/apt/keyrings
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+$ sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+3.Configuration du dépôt :
+$ echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+
+$ sudo apt install docker.io -y
+$ sudo systemctl start docker
+$ sudo systemctl enable docker
+$ sudo usermod -aG docker riadh  // ou bien://  $ sudo usermod -aG docker $(whoami)
+
+#Install containerD
+sudo apt-get update
+sudo apt-get install -y containerd.io
+
+1.Containerd configuration file
+sudo mkdir -p /etc/containerd
+sudo containerd config default | sudo tee /etc/containerd/config.toml
+
+2.Param cgroup driver pour exécuter systemd
+sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+
+#Install Kube
+
+$ sudo apt-get update
+$ sudo apt install apt-transport-https curl
+$ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+$ echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+$ sudo apt update
+$ sudo apt-get install -y kubelet kubeadm kubectl
+$ sudo apt-mark hold kubeadm kubelet kubectl
+
+#Redémarrage containerd
+sudo systemctl restart containerd
+
+#Installation init sur Master
+sudo kubeadm init --apiserver-advertise-address=192.168.153.11 --pod-network-cidr=10.244.0.0/16
+
+
+#Ajout .kube
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+#Autocomplétation
+source /usr/share/bash-completion/bash_completion
+echo 'source <(kubectl completion bash)' >>~/.bashrc
+exec bash
+
+#Installation Calico
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+#Tainter Kube
+kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
+
+kubectl get nodes  // pour tester le fonctionnement
